@@ -130,6 +130,7 @@ struct cache_blk_t
      defined in this structure! */
   byte_t data[1];		/* actual data block starts here, block size
 				   should probably be a multiple of 8 */
+  int rehash_bit;
 };
 
 /* cache set definition (one or more blocks sharing the same set index) */

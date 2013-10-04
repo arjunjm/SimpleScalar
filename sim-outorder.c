@@ -219,6 +219,10 @@ static int res_fpalu;
 /* total number of floating point multiplier/dividers available */
 static int res_fpmult;
 
+/* flag to indicate whether pseudo associativity is enabled or not*/
+static int pseudo_assoc_cache = FALSE; 
+int *pseudo_assoc_global_ptr = &pseudo_assoc_cache; // This pointer can be used in sim-outorder to check if pseudo-associativity has been enabled or not
+
 /* text-based stat profiles */
 #define MAX_PCSTAT_VARS 8
 static int pcstat_nelt = 0;
@@ -734,6 +738,13 @@ sim_reg_options(struct opt_odb_t *odb)
 	      /* print */TRUE, /* format */NULL);
 
   /* cache options */
+
+  /* adding pseudo associativity switch */
+
+  opt_reg_flag(odb, "-pseudoassoc",
+          "pseudo associative cache mode {true|false}",
+          &pseudo_assoc_cache, /* default */ FALSE,
+          /* print */ TRUE, /* format */ NULL);
 
   opt_reg_string(odb, "-cache:dl1",
 		 "l1 data cache config, i.e., {<config>|none}",
