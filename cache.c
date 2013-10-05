@@ -518,7 +518,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
     md_addr_t bofs = CACHE_BLK(cp, addr);
     struct cache_blk_t *blk, *repl;
     int lat = 0;
-    extern int *pseudo_assoc_global_ptr;
+    //extern int *pseudo_assoc_global_ptr;
 
     /* Recomputing the tag value for pseudo associative cache */
     md_addr_t tag_pseudo_assoc_cache = CACHE_TAG_PSEUDOASSOC(cp, addr);
@@ -560,7 +560,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
                 goto cache_hit;
         }
     }
-    else if ((cp->assoc == 1) && (*pseudo_assoc_global_ptr))
+    else if ((cp->assoc == 1) /*&& (*pseudo_assoc_global_ptr)*/)
     {
         /* if cache is direct-mapped and pseudo associativity is enabled */
         for (blk=cp->sets[set].way_head;
@@ -570,10 +570,10 @@ cache_access(struct cache_t *cp,	/* cache to access */
             /* The pseudo associative tag has to be compared with the 
              * block's tag appended with the first bit of the block's cache index bits */
 
-            md_addr_t set_first_bit   = (addr >> tag_shift-1) & 1;
-            md_addr_t tag_and_set_msb = (blk->tag << 1) | set_first_bit; 
+            md_addr_t set_first_bit         = (addr >> cp->tag_shift-1) & 1;
+            md_addr_t tag_and_set_first_bit = (blk->tag << 1) | set_first_bit; 
 
-            if (tag_and_set_msb == tag_pseudo_assoc_cache && (blk->status & CACHE_BLK_VALID))
+            if (tag_and_set_first_bit == tag_pseudo_assoc_cache && (blk->status & CACHE_BLK_VALID))
                 goto cache_hit;
         }
     }
@@ -592,18 +592,23 @@ cache_access(struct cache_t *cp,	/* cache to access */
     /* cache block not found */
 
     /* If pseudo associativity is enabled, we have to check for the block in the highest-bit inverted cache index as well */
-    if((cp->assoc == 1) && (*pseudo_assoc_global_ptr))
+    if((cp->assoc == 1) /*&& (*pseudo_assoc_global_ptr)*/)
     {
-        md_addr_t flipped_set_index = set ^ ( 1 << log_base2(nsets));
+        md_addr_t flipped_set_index = set ^ ( 1 << log_base2(cp->nsets) -1);
 
         for (blk = cp->sets[flipped_set_index].way_head; blk; blk = blk->way_next)
         {
-            md_addr_t flipped_set_first_bit = 1 ^ ((addr >> tag_shift-1) & 1);
-            md_addr_t tag_and_set_msb       = (blk->tag << 1) | flipped_set_first_bit;
+            //md_addr_t flipped_set_first_bit = 1 ^ ((addr >> tag_shift-1) & 1);
+            md_addr_t set_first_bit         = (addr >> cp->tag_shift-1) & 1;
+            md_addr_t tag_and_set_first_bit = (blk->tag << 1) | set_first_bit;
 
-            if(tag_and_set_msb == tag_pseudo_assoc_cache && (blk->status & CACHE_BLK_VALID))
+            if(tag_and_set_first_bit == tag_pseudo_assoc_cache && (blk->status & CACHE_BLK_VALID))
             {
-                // Should I add logic to swap data here?
+                /* swap the blocks so that subsequent accesses will result in first hit */
+                struct cache_set_t tempSet  = cp->sets[flipped_set_index];
+                cp->sets[flipped_set_index] = cp->sets[set];
+                cp->sets[set]               = tempSet;
+                goto cache_hit;
             }
         }
     }

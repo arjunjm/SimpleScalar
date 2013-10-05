@@ -112,6 +112,7 @@ enum cache_policy {
 /* cache block (or line) definition */
 struct cache_blk_t
 {
+  int rehash_bit;
   struct cache_blk_t *way_next;	/* next block in the ordered way chain, used
 				   to order blocks for replacement */
   struct cache_blk_t *way_prev;	/* previous block in the order way chain */
@@ -130,7 +131,6 @@ struct cache_blk_t
      defined in this structure! */
   byte_t data[1];		/* actual data block starts here, block size
 				   should probably be a multiple of 8 */
-  int rehash_bit;
 };
 
 /* cache set definition (one or more blocks sharing the same set index) */
