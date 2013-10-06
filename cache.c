@@ -522,6 +522,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
 
     /* Recomputing the tag value for pseudo associative cache */
     md_addr_t tag_pseudo_assoc_cache = CACHE_TAG_PSEUDOASSOC(cp, addr);
+    md_addr_t flipped_set_index; 
 
     /* default replacement address */
     if (repl_addr)
@@ -560,7 +561,7 @@ cache_access(struct cache_t *cp,	/* cache to access */
                 goto cache_hit;
         }
     }
-    else if ((cp->assoc == 1) /*&& (*pseudo_assoc_global_ptr)*/)
+    else if ((cp->assoc == 1) && (cp->pseudo_associativity == TRUE))
     {
         /* if cache is direct-mapped and pseudo associativity is enabled */
         for (blk=cp->sets[set].way_head;
@@ -592,9 +593,9 @@ cache_access(struct cache_t *cp,	/* cache to access */
     /* cache block not found */
 
     /* If pseudo associativity is enabled, we have to check for the block in the highest-bit inverted cache index as well */
-    if((cp->assoc == 1) /*&& (*pseudo_assoc_global_ptr)*/)
+    if((cp->assoc == 1) && cp->pseudo_associativity == TRUE)
     {
-        md_addr_t flipped_set_index = set ^ ( 1 << log_base2(cp->nsets) -1);
+        flipped_set_index = set ^ ( 1 << log_base2(cp->nsets) -1);
 
         for (blk = cp->sets[flipped_set_index].way_head; blk; blk = blk->way_next)
         {
@@ -615,6 +616,13 @@ cache_access(struct cache_t *cp,	/* cache to access */
 
     /* **MISS** */
     cp->misses++;
+
+    if((cp->assoc == 1) && cp->pseudo_associativity == TRUE)
+    {
+        /* if pseudo associativity is enabled, then the data must be brought from memory 
+         * to the flipped cache index */
+        set = flipped_set_index;
+    }
 
     /* select the appropriate block to replace, and re-link this entry to
        the appropriate place in the way list */
@@ -697,6 +705,15 @@ cache_access(struct cache_t *cp,	/* cache to access */
     /* link this entry back into the hash table */
     if (cp->hsize)
         link_htab_ent(cp, &cp->sets[set], repl);
+
+    /* if pseudo associativity is enabled, swap the blocks with flipped cache index and the 
+     * original cache index. */
+    if( (cp->assoc == 1) && (cp->pseudo_associativity == TRUE) )
+    {
+        struct cache_set_t tempSet  = cp->sets[flipped_set_index];
+        cp->sets[flipped_set_index] = cp->sets[set];
+        cp->sets[set]               = tempSet;
+    }
 
     /* return latency of the operation */
     return lat;

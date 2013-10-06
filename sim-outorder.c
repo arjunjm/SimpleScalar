@@ -221,7 +221,6 @@ static int res_fpmult;
 
 /* flag to indicate whether pseudo associativity is enabled or not*/
 static int pseudo_assoc_cache = FALSE; 
-int *pseudo_assoc_global_ptr = &pseudo_assoc_cache; // This pointer can be used in sim-outorder to check if pseudo-associativity has been enabled or not
 
 /* text-based stat profiles */
 #define MAX_PCSTAT_VARS 8
@@ -1028,6 +1027,12 @@ sim_check_options(struct opt_odb_t *odb,        /* options database */
       cache_dl1 = cache_create(name, nsets, bsize, /* balloc */FALSE,
 			       /* usize */0, assoc, cache_char2policy(c),
 			       dl1_access_fn, /* hit lat */cache_dl1_lat);
+
+      /* setting pseudo-associativity mode for L1 Data Cache */
+      if(pseudo_assoc_cache == TRUE)
+          cache_dl1->pseudo_associativity = 1;
+      else
+          cache_dl1->pseudo_associativity = 0;
 
       /* is the level 2 D-cache defined? */
       if (!mystricmp(cache_dl2_opt, "none"))

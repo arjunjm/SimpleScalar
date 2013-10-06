@@ -182,6 +182,11 @@ struct cache_t
   int tag_shift;
   md_addr_t tag_mask;		/* use *after* shift */
   md_addr_t tagset_mask;	/* used for fast hit detection */
+  int pseudo_associativity; /* -to indicate whether pseudo-associativity is enabled or not 
+                               -applicable only for L1 Data Cache.
+                               -if value is 0, pseudo-associativity is disabled
+                               -if value is 1, pseudo-associativity is enabled
+                            */
 
   /* bus resource */
   tick_t bus_free;		/* time when bus to next level of cache is
