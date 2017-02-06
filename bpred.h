@@ -104,7 +104,8 @@ enum bpred_class {
   BPred2bit,			/* 2-bit saturating cntr pred (dir mapped) */
   BPredTaken,			/* static predict taken */
   BPredNotTaken,		/* static predict not taken */
-  BPred_NUM
+  BPred_NUM,
+  BPredMine
 };
 
 /* an entry in a BTB */
@@ -141,6 +142,7 @@ struct bpred_t {
     struct bpred_dir_t *bimod;	  /* first direction predictor */
     struct bpred_dir_t *twolev;	  /* second direction predictor */
     struct bpred_dir_t *meta;	  /* meta predictor */
+    struct bpred_dir_t *mine;
   } dirpred;
 
   struct {

@@ -108,6 +108,13 @@ bpred_create(enum bpred_class class,	/* type of predictor to create */
     pred->dirpred.bimod = 
       bpred_dir_create(class, bimod_size, 0, 0, 0);
 
+    break;
+
+  case BPredMine:
+    pred->dirpred.mine =
+      bpred_dir_create(class,0,0,0,0);
+      //TODO: enter correct config info
+
   case BPredTaken:
   case BPredNotTaken:
     /* no other state */
@@ -117,6 +124,7 @@ bpred_create(enum bpred_class class,	/* type of predictor to create */
     panic("bogus predictor class");
   }
 
+  //TODO: do something here!
   /* allocate ret-addr stack */
   switch (class) {
   case BPredComb:
@@ -176,6 +184,7 @@ bpred_create(enum bpred_class class,	/* type of predictor to create */
   return pred;
 }
 
+//TODO: add mine here
 /* create a branch direction predictor */
 struct bpred_dir_t *		/* branch direction predictor instance */
 bpred_dir_create (
@@ -225,10 +234,10 @@ bpred_dir_create (
       /* initialize counters to weakly this-or-that */
       flipflop = 1;
       for (cnt = 0; cnt < l2size; cnt++)
-	{
-	  pred_dir->config.two.l2table[cnt] = flipflop;
-	  flipflop = 3 - flipflop;
-	}
+	    {
+	      pred_dir->config.two.l2table[cnt] = flipflop;
+	      flipflop = 3 - flipflop;
+	    }
 
       break;
     }
@@ -245,8 +254,8 @@ bpred_dir_create (
     flipflop = 1;
     for (cnt = 0; cnt < l1size; cnt++)
       {
-	pred_dir->config.bimod.table[cnt] = flipflop;
-	flipflop = 3 - flipflop;
+	      pred_dir->config.bimod.table[cnt] = flipflop;
+	      flipflop = 3 - flipflop;
       }
 
     break;
@@ -263,6 +272,7 @@ bpred_dir_create (
   return pred_dir;
 }
 
+//TODO: add case for printing config
 /* print branch direction predictor configuration */
 void
 bpred_dir_config(
@@ -291,11 +301,15 @@ bpred_dir_config(
     fprintf(stream, "pred_dir: %s: predict not taken\n", name);
     break;
 
+  case BPredMine:
+    break;
+
   default:
     panic("bogus branch direction predictor class");
   }
 }
 
+//TODO: add case for mine
 /* print branch predictor configuration */
 void
 bpred_config(struct bpred_t *pred,	/* branch predictor instance */
@@ -348,6 +362,7 @@ bpred_stats(struct bpred_t *pred,	/* branch predictor instance */
 	  (double)pred->dir_hits/(double)(pred->dir_hits+pred->misses));
 }
 
+//TODO: add name for stats Done!
 /* register branch predictor stats */
 void
 bpred_reg_stats(struct bpred_t *pred,	/* branch predictor instance */
@@ -372,6 +387,9 @@ bpred_reg_stats(struct bpred_t *pred,	/* branch predictor instance */
       break;
     case BPredNotTaken:
       name = "bpred_nottaken";
+      break;
+    case BPredMine:
+      name = "bpred_mine";
       break;
     default:
       panic("bogus branch predictor class");
@@ -497,13 +515,13 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
   /* Except for jumps, get a pointer to direction-prediction bits */
   switch (pred_dir->class) {
     case BPred2Level:
-      {
-	int l1index, l2index;
+    {
+	    int l1index, l2index;
 
-        /* traverse 2-level tables */
-        l1index = (baddr >> MD_BR_SHIFT) & (pred_dir->config.two.l1size - 1);
-        l2index = pred_dir->config.two.shiftregs[l1index];
-        if (pred_dir->config.two.xor)
+      /* traverse 2-level tables */
+      l1index = (baddr >> MD_BR_SHIFT) & (pred_dir->config.two.l1size - 1);
+      l2index = pred_dir->config.two.shiftregs[l1index];
+      if (pred_dir->config.two.xor)
 	  {
 #if 1
 	    /* this L2 index computation is more "compatible" to McFarling's
@@ -532,6 +550,9 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
       break;
     case BPred2bit:
       p = &pred_dir->config.bimod.table[BIMOD_HASH(pred_dir, baddr)];
+      break;
+    case BPredMine:
+      //TODO: add stuff here
       break;
     case BPredTaken:
     case BPredNotTaken:
@@ -581,52 +602,56 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
   switch (pred->class) {
     case BPredComb:
       if ((MD_OP_FLAGS(op) & (F_CTRL|F_UNCOND)) != (F_CTRL|F_UNCOND))
-	{
-	  char *bimod, *twolev, *meta;
-	  bimod = bpred_dir_lookup (pred->dirpred.bimod, baddr);
-	  twolev = bpred_dir_lookup (pred->dirpred.twolev, baddr);
-	  meta = bpred_dir_lookup (pred->dirpred.meta, baddr);
-	  dir_update_ptr->pmeta = meta;
-	  dir_update_ptr->dir.meta  = (*meta >= 2);
-	  dir_update_ptr->dir.bimod = (*bimod >= 2);
-	  dir_update_ptr->dir.twolev  = (*twolev >= 2);
-	  if (*meta >= 2)
-	    {
-	      dir_update_ptr->pdir1 = twolev;
-	      dir_update_ptr->pdir2 = bimod;
-	    }
-	  else
-	    {
-	      dir_update_ptr->pdir1 = bimod;
-	      dir_update_ptr->pdir2 = twolev;
-	    }
-	}
+      {
+        char *bimod, *twolev, *meta;
+        bimod = bpred_dir_lookup (pred->dirpred.bimod, baddr);
+        twolev = bpred_dir_lookup (pred->dirpred.twolev, baddr);
+        meta = bpred_dir_lookup (pred->dirpred.meta, baddr);
+        dir_update_ptr->pmeta = meta;
+        dir_update_ptr->dir.meta  = (*meta >= 2);
+        dir_update_ptr->dir.bimod = (*bimod >= 2);
+        dir_update_ptr->dir.twolev  = (*twolev >= 2);
+        if (*meta >= 2)
+        {
+          dir_update_ptr->pdir1 = twolev;
+          dir_update_ptr->pdir2 = bimod;
+        }
+        else
+        {
+          dir_update_ptr->pdir1 = bimod;
+          dir_update_ptr->pdir2 = twolev;
+        }
+      }
       break;
     case BPred2Level:
       if ((MD_OP_FLAGS(op) & (F_CTRL|F_UNCOND)) != (F_CTRL|F_UNCOND))
-	{
-	  dir_update_ptr->pdir1 =
-	    bpred_dir_lookup (pred->dirpred.twolev, baddr);
-	}
+      {
+        dir_update_ptr->pdir1 =
+          bpred_dir_lookup (pred->dirpred.twolev, baddr);
+      }
       break;
     case BPred2bit:
       if ((MD_OP_FLAGS(op) & (F_CTRL|F_UNCOND)) != (F_CTRL|F_UNCOND))
-	{
-	  dir_update_ptr->pdir1 =
-	    bpred_dir_lookup (pred->dirpred.bimod, baddr);
-	}
+      {
+        dir_update_ptr->pdir1 =
+          bpred_dir_lookup (pred->dirpred.bimod, baddr);
+      }
       break;
     case BPredTaken:
       return btarget;
     case BPredNotTaken:
       if ((MD_OP_FLAGS(op) & (F_CTRL|F_UNCOND)) != (F_CTRL|F_UNCOND))
-	{
-	  return baddr + sizeof(md_inst_t);
-	}
+      {
+        return baddr + sizeof(md_inst_t);
+      }
       else
-	{
-	  return btarget;
-	}
+      {
+        return btarget;
+      }
+      break;
+    case BPredMine:
+      //TODO: add mine!
+      break;
     default:
       panic("bogus predictor class");
   }
@@ -982,4 +1007,6 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 	  pbtb->target = btarget;
 	}
     }
+
+  //TODO: add mine maybe
 }
