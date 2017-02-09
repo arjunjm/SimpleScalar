@@ -523,7 +523,7 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
       l2index = pred_dir->config.two.shiftregs[l1index];
       if (pred_dir->config.two.xor)
 	  {
-#if 1
+  #if 1
 	    /* this L2 index computation is more "compatible" to McFarling's
 	       verison of it, i.e., if the PC xor address component is only
 	       part of the index, take the lower order address bits for the
@@ -532,9 +532,9 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
 			& ((1 << pred_dir->config.two.shift_width) - 1))
 		       | ((baddr >> MD_BR_SHIFT)
 			  << pred_dir->config.two.shift_width));
-#else
+  #else
 	    l2index = l2index ^ (baddr >> MD_BR_SHIFT);
-#endif
+  #endif
 	  }
 	else
 	  {
@@ -680,7 +680,7 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
       return target;
     }
 
-#ifndef RAS_BUG_COMPATIBLE
+  #ifndef RAS_BUG_COMPATIBLE
   /* if function call, push return-address onto return-address stack */
   if (is_call && pred->retstack.size)
     {
@@ -689,7 +689,7 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
 	baddr + sizeof(md_inst_t);
       pred->retstack_pushes++;
     }
-#endif /* !RAS_BUG_COMPATIBLE */
+  #endif /* !RAS_BUG_COMPATIBLE */
   
   /* not a return. Get a pointer into the BTB */
   index = (baddr >> MD_BR_SHIFT) & (pred->btb.sets - 1);
@@ -838,7 +838,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
    * is a stateful predictor 
    */
 
-#ifdef RAS_BUG_COMPATIBLE
+  #ifdef RAS_BUG_COMPATIBLE
   /* if function call, push return-address onto return-address stack */
   if (MD_IS_CALL(op) && pred->retstack.size)
     {
@@ -847,7 +847,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 	baddr + sizeof(md_inst_t);
       pred->retstack_pushes++;
     }
-#endif /* RAS_BUG_COMPATIBLE */
+  #endif /* RAS_BUG_COMPATIBLE */
 
   /* update L1 table if appropriate */
   /* L1 table is updated unconditionally for combining predictor too */
